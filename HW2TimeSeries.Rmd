@@ -1,0 +1,59 @@
+---
+title: "HW2 Time Series"
+output: html_document
+date: "2025-02-20"
+---
+
+```{r}
+
+library(fpp)
+library(fpp2)
+library(TTR)
+windpower <- read.csv("~/Downloads/wind-power-production-us.csv", header = TRUE)
+
+windpower
+
+windpower_ts <- ts(windpower$wind_united_states, start = c(2001, 1), frequency = 12)
+
+windpower$date <- as.Date(windpower$date, format="%y-%b")
+Acf(windpower_ts)
+plot(windpower_ts)
+stl_decomp <- stl(windpower_ts, s.window = "periodic")
+plot(stl_decomp)
+
+#Moving Average
+MA12 <- ma(windpower_ts,order=24)
+MA12_forecast <- forecast(MA12, h=12)
+plot(MA12_forecast)
+#This model is based on the average wind power production over the last 24 months, or 2 years. Based on this average, it predicts the wind power production will steadily increase over the next 12 months, or 1 year.
+
+#Naive
+naive_forecast <- naive(windpower_ts, 12)
+plot(naive_forecast)
+#The naive model takes the wind power production from the last year, and forecasts the same production for the next year. For example, it takes the production of Feburary 2023, and forecasts that same production for February 2024.
+
+#ETS
+ets <- ets(windpower_ts)
+forecast_ets <- forecast.ets(ets, h=12)
+plot(forecast_ets)
+#The ETS forecast takes into account the error, trend, and seasonality. The ETS forecast says the error, trend, and seasonal factors increase with the wind power production over time. It predicts the wind power productions will gradually increase in the next year.
+
+#Holt Winters
+HW <- HoltWinters(windpower_ts)
+HW_forecast <- forecast(HW, h=12)
+plot(HW_forecast)
+#The Holt Winters forecast factors in the trend and seasonality of the wind power production in the US. It predicts that the wind power production will take a dip and then increase over the next year.
+
+#One Plot
+plot(windpower_ts)
+lines(MA12_forecast$fitted, col="blue")
+lines(naive_forecast$fitted, col="orange")
+lines(forecast_ets$fitted, col="red")
+
+#Accuracy
+accuracy(naive_forecast)
+accuracy(MA12_forecast)
+accuracy(forecast_ets)
+accuracy(HW_forecast)
+
+#My best model is the moving average forecast. The MAPE is the lowest of all my models at 0.3267159, which means the mean absolute percentage error of this forecast is only 0.327%. This percentage showing the amount of error being this low indicates a very accurate forecast. The naive forecast's MAPE is 12.81%, which is the highest MAPE of all my forecasts. The ETS forecast's MAPE was 8.98%, and the Holt Winters forecast's MAPE was 10.9%. These percentages indicate there is smaller error than the naive forecast, but they still have greater errors than the moving average forecast. Overall, the moving average has the lowest MAPE, meaning it has the smallest average error, making it the best model. 
